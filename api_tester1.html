@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #07080d;
+  --s1:        #0d0f17;
+  --s2:        #12141f;
+  --s3:        #181b28;
+  --border:    #1f2235;
+  --border2:   #2a2e46;
+  --ink:       #e8ecf5;
+  --ink2:      #9aa3be;
+  --ink3:      #5a6280;
+  --teal:      #2dd4bf;
+  --teal2:     #99f6e4;
+  --amber:     #f59e0b;
+  --rose:      #fb7185;
+  --sky:       #38bdf8;
+  --violet:    #818cf8;
+  --green:     #4ade80;
+  --font:      'Bricolage Grotesque', sans-serif;
+  --mono:      'DM Mono', monospace;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* grain */
+body::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:9999;
+}
+
+/* ── Login screen ───────────────────────────────────────────── */
+#loginScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.login-glow {
+  position: absolute;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(45,212,191,.07) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  pointer-events: none;
+}
+
+.login-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px;
+  width: 420px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:2px;
+  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.login-logo-mark {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--teal), var(--sky));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+
+.login-logo-text {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.login-logo-text span { color: var(--teal); }
+
+.login-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  margin-bottom: 6px;
+}
+
+.login-sub {
+  font-size: 13px;
+  color: var(--ink3);
+  margin-bottom: 32px;
+  font-family: var(--mono);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink3);
+  font-family: var(--mono);
+}
+
+.field input {
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.field input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(45,212,191,.1);
+}
+
+.field input::placeholder { color: var(--ink3); }
+
+.login-btn {
+  width: 100%;
+  background: var(--teal);
+  color: #07080d;
+  border: none;
+  border-radius: 8px;
+  padding: 13px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-btn:hover { background: var(--teal2); transform: translateY(-1px); }
+.login-btn:active { transform: translateY(0); }
+.login-btn:disabled { background: var(--ink3); cursor: not-allowed; transform: none; }
+
+.login-err {
+  background: rgba(251,113,133,.1);
+  border: 1px solid rgba(251,113,133,.3);
+  border-radius: 8px;
+  color: var(--rose);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  display: none;
+}
+
+/* ── App shell ──────────────────────────────────────────────── */
+#app {
+  display: none;
+  min-height: 100vh;
+  display: none;
+  flex-direction: column;
+}
+
+/* Top nav */
+.topnav {
+  height: 58px;
+  background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin-right: 32px;
+}
+
+.nav-logo-mark {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--teal), var(--sky));
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+
+.nav-tab {
+  background: none;
+  border: none;
+  color: var(--ink3);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-tab:hover { background: var(--s2); color: var(--ink2); }
+.nav-tab.active { background: rgba(45,212,191,.1); color: var(--teal); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--ink2);
+}
+
+.user-avatar {
+  width: 22px; height: 22px;
+  background: linear-gradient(135deg, var(--teal), var(--violet));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #07080d;
+}
+
+.logout-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--ink3);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all .15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.logout-btn:hover { border-color: var(--rose); color: var(--rose); }
+
+/* ── Page content ───────────────────────────────────────────── */
+.page { display: none; padding: 28px; max-width: 1400px; margin: 0 auto; width: 100%; }
+.page.active { display: block; }
+
+/* ── Overview page ──────────────────────────────────────────── */
+.page-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  margin-bottom: 6px;
+}
+
+.page-sub {
+  font-size: 13px;
+  color: var(--ink3);
+  font-family: var(--mono);
+  margin-bottom: 28px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s, transform .2s;
+}
+
+.stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+}
+
+.stat-card.teal::before { background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.stat-card.amber::before { background: linear-gradient(90deg, transparent, var(--amber), transparent); }
+.stat-card.violet::before { background: linear-gradient(90deg, transparent, var(--violet), transparent); }
+.stat-card.rose::before { background: linear-gradient(90deg, transparent, var(--rose), transparent); }
+
+.stat-icon {
+  font-size: 22px;
+  margin-bottom: 14px;
+  opacity: 0.9;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: var(--mono);
+}
+
+.stat-card.teal .stat-value { color: var(--teal); }
+.stat-card.amber .stat-value { color: var(--amber); }
+.stat-card.violet .stat-value { color: var(--violet); }
+.stat-card.rose .stat-value { color: var(--rose); }
+
+/* Info grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.info-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.info-card-header {
+  padding: 16px 20px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.info-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink3);
+  font-family: var(--mono);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-card-body { padding: 20px; }
+
+.profile-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(31,34,53,.8);
+  font-size: 13px;
+}
+
+.profile-row:last-child { border-bottom: none; }
+.profile-key { color: var(--ink3); font-family: var(--mono); font-size: 11px; }
+.profile-val { color: var(--ink); font-family: var(--mono); font-size: 12px; }
+.profile-val.verified { color: var(--green); }
+.profile-val.unverified { color: var(--amber); }
+
+/* ── Table ──────────────────────────────────────────────────── */
+.table-wrap {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.table-head {
+  padding: 16px 20px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.table-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink3);
+  font-family: var(--mono);
+}
+
+.refresh-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  color: var(--ink3);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 4px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all .15s;
+}
+
+.refresh-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: var(--mono);
+}
+
+th {
+  text-align: left;
+  padding: 10px 20px;
+  background: var(--s2);
+  color: var(--ink3);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(31,34,53,.5);
+  color: var(--ink2);
+  vertical-align: middle;
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(45,212,191,.03); }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-green { background: rgba(74,222,128,.12); color: var(--green); }
+.badge-amber { background: rgba(245,158,11,.12); color: var(--amber); }
+.badge-rose  { background: rgba(251,113,133,.12); color: var(--rose); }
+.badge-sky   { background: rgba(56,189,248,.12); color: var(--sky); }
+.badge-violet { background: rgba(129,140,248,.12); color: var(--violet); }
+
+.uuid-cell {
+  font-size: 10px;
+  color: var(--ink3);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Action bar ─────────────────────────────────────────────── */
+.action-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.action-btn {
+  background: var(--teal);
+  color: #07080d;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-btn:hover { background: var(--teal2); }
+
+.action-btn-ghost {
+  background: var(--s2);
+  color: var(--ink2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
+
+.action-btn-danger {
+  background: rgba(251,113,133,.1);
+  color: var(--rose);
+  border: 1px solid rgba(251,113,133,.25);
+  border-radius: 8px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.action-btn-danger:hover { background: rgba(251,113,133,.2); }
+
+/* ── Modal ──────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7,8,13,.8);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--s1);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 32px;
+  width: 440px;
+  position: relative;
+  animation: modalIn .2s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes modalIn {
+  from { transform: scale(.94) translateY(10px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  margin-bottom: 4px;
+}
+
+.modal-sub {
+  font-size: 12px;
+  color: var(--ink3);
+  font-family: var(--mono);
+  margin-bottom: 24px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--ink3);
+  cursor: pointer;
+  font-size: 16px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+
+.modal-close:hover { color: var(--rose); border-color: rgba(251,113,133,.4); }
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  justify-content: flex-end;
+}
+
+.modal-err {
+  background: rgba(251,113,133,.1);
+  border: 1px solid rgba(251,113,133,.3);
+  border-radius: 6px;
+  color: var(--rose);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 8px 12px;
+  margin-top: 12px;
+  display: none;
+}
+
+/* ── Empty state ────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: var(--ink3);
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.empty-icon { font-size: 28px; opacity: .4; }
+
+/* ── Loading skeleton ───────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--s2) 25%, var(--s3) 50%, var(--s2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 4px;
+  height: 12px;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* ── Toast ──────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-family: var(--mono);
+  z-index: 9000;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 320px;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok  { border-color: rgba(74,222,128,.4); color: var(--green); }
+.toast.err { border-color: rgba(251,113,133,.4); color: var(--rose); }
+
+/* ── History log ────────────────────────────────────────────── */
+.log-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 80px 90px 80px;
+  gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(31,34,53,.5);
+  font-size: 11px;
+  font-family: var(--mono);
+  align-items: center;
+}
+
+.log-row:last-child { border-bottom: none; }
+.log-row:hover { background: rgba(45,212,191,.02); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ───────────────────────────────────────────── -->
+<div id="loginScreen">
+  <div class="login-glow"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-mark">🔐</div>
+      <div class="login-logo-text">Auth <span>Dashboard</span></div>
+    </div>
+    <div class="login-title">Sign in</div>
+    <div class="login-sub">// connect to your Django auth server</div>
+    <div class="field">
+      <label>Username</label>
+      <input id="loginUser" type="text" placeholder="your username" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="field">
+      <label>API Base URL</label>
+      <input id="loginUrl" type="text" value="http://localhost:8000/api/auth" placeholder="http://localhost:8000/api/auth">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">
+      <span id="loginBtnText">Sign In →</span>
+    </button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ── App Shell ──────────────────────────────────────────────── -->
+<div id="app">
+  <nav class="topnav">
+    <div class="nav-logo">
+      <div class="nav-logo-mark">🔐</div>
+      Auth Dashboard
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('overview')">📊 Overview</button>
+      <button class="nav-tab" onclick="showPage('orgs')">🏢 Organizations</button>
+      <button class="nav-tab" onclick="showPage('assignments')">🔗 Assignments</button>
+      <button class="nav-tab" onclick="showPage('history')">📋 Login History</button>
+    </div>
+    <div class="nav-right">
+      <div class="user-pill">
+        <div class="user-avatar" id="navAvatar">?</div>
+        <span id="navUsername">—</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- ── Overview ── -->
+  <div class="page active" id="page-overview">
+    <div class="page-title">Overview</div>
+    <div class="page-sub" id="overviewSub">// loading…</div>
+
+    <div class="stat-grid">
+      <div class="stat-card teal">
+        <div class="stat-icon">👤</div>
+        <div class="stat-value" id="statUser">—</div>
+        <div class="stat-label">Logged In As</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon">🏢</div>
+        <div class="stat-value" id="statOrgs">—</div>
+        <div class="stat-label">Organizations</div>
+      </div>
+      <div class="stat-card violet">
+        <div class="stat-icon">🔗</div>
+        <div class="stat-value" id="statAssign">—</div>
+        <div class="stat-label">Assignments</div>
+      </div>
+      <div class="stat-card rose">
+        <div class="stat-icon">📋</div>
+        <div class="stat-value" id="statLogins">—</div>
+        <div class="stat-label">Login Events</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-header">
+          <div class="info-card-title">👤 Profile</div>
+          <span style="font-size:10px;font-family:var(--mono);color:var(--ink3)" id="profileVerifiedBadge"></span>
+        </div>
+        <div class="info-card-body" id="profileBody">
+          <div class="skeleton" style="margin-bottom:10px"></div>
+          <div class="skeleton" style="width:70%;margin-bottom:10px"></div>
+          <div class="skeleton" style="width:85%"></div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">
+          <div class="info-card-title">🔑 Token</div>
+        </div>
+        <div class="info-card-body" id="tokenBody">
+          <div class="skeleton" style="margin-bottom:10px"></div>
+          <div class="skeleton" style="width:60%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Organizations ── -->
+  <div class="page" id="page-orgs">
+    <div class="page-title">Organizations</div>
+    <div class="page-sub">// manage your organizations</div>
+    <div class="action-bar">
+      <button class="action-btn" onclick="openModal('createOrg')">＋ New Organization</button>
+      <button class="action-btn-ghost" onclick="loadOrgs()">↻ Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head">
+        <span class="table-title">All Organizations</span>
+        <span id="orgCount" style="font-family:var(--mono);font-size:11px;color:var(--ink3)"></span>
+      </div>
+      <div id="orgsTableBody"></div>
+    </div>
+  </div>
+
+  <!-- ── Assignments ── -->
+  <div class="page" id="page-assignments">
+    <div class="page-title">User ↔ Org Assignments</div>
+    <div class="page-sub">// assign users to organizations</div>
+    <div class="action-bar">
+      <button class="action-btn" onclick="openModal('assignUser')">＋ Assign User</button>
+      <button class="action-btn-ghost" onclick="loadAssignments()">↻ Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head">
+        <span class="table-title">All Assignments</span>
+        <span id="assignCount" style="font-family:var(--mono);font-size:11px;color:var(--ink3)"></span>
+      </div>
+      <div id="assignTableBody"></div>
+    </div>
+  </div>
+
+  <!-- ── Login History ── -->
+  <div class="page" id="page-history">
+    <div class="page-title">Login History</div>
+    <div class="page-sub">// audit log for your account</div>
+    <div class="action-bar">
+      <button class="action-btn-ghost" onclick="loadHistory()">↻ Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head">
+        <span class="table-title">Login Events</span>
+      </div>
+      <div id="historyTableBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modals ─────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modal-createOrg">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('createOrg')">✕</button>
+    <div class="modal-title">New Organization</div>
+    <div class="modal-sub">// POST /organizations/</div>
+    <div class="field"><label>Name *</label><input id="mo-name" type="text" placeholder="Acme Corp"></div>
+    <div class="field"><label>Domain *</label><input id="mo-domain" type="text" placeholder="acme.com"></div>
+    <div class="modal-err" id="mo-err"></div>
+    <div class="modal-actions">
+      <button class="action-btn-ghost" onclick="closeModal('createOrg')">Cancel</button>
+      <button class="action-btn" onclick="createOrg()">Create →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-assignUser">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('assignUser')">✕</button>
+    <div class="modal-title">Assign User to Org</div>
+    <div class="modal-sub">// POST /user-organizations/</div>
+    <div class="field"><label>User ID *</label><input id="ma-user" type="text" placeholder="UUID" id="ma-user"></div>
+    <div class="field"><label>Organization ID *</label><input id="ma-org" type="text" placeholder="UUID"></div>
+    <div class="modal-err" id="ma-err"></div>
+    <div class="modal-actions">
+      <button class="action-btn-ghost" onclick="closeModal('assignUser')">Cancel</button>
+      <button class="action-btn" onclick="assignUser()">Assign →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config & State ─────────────────────────────────────────────
+const API_BASE_URL = () => document.getElementById('loginUrl')?.value?.replace(/\/$/, '') || 'http://localhost:8000/api/auth';
+
+const S = {
+  token: '',
+  refreshToken: '',
+  userId: '',
+  username: '',
+  email: '',
+  emailVerified: false,
+};
+
+// ── API helper ─────────────────────────────────────────────────
+async function api(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (S.token) headers['Authorization'] = 'Token ' + S.token;
+  const res = await fetch(API_BASE_URL() + path, { headers, ...options });
+  const ct = res.headers.get('content-type') || '';
+  const data = ct.includes('application/json') ? await res.json() : await res.text();
+  return { ok: res.ok, status: res.status, data };
+}
+
+// ── Login ──────────────────────────────────────────────────────
+async function doLogin() {
+  const btn = document.getElementById('loginBtn');
+  const txt = document.getElementById('loginBtnText');
+  const err = document.getElementById('loginErr');
+  err.style.display = 'none';
+  btn.disabled = true;
+  txt.textContent = 'Signing in…';
+
+  try {
+    const res = await fetch(API_BASE_URL() + '/login/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('loginUser').value,
+        password: document.getElementById('loginPass').value,
+      })
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || data.detail || 'Login failed');
+
+    S.token        = data.access_token;
+    S.refreshToken = data.refresh_token;
+    S.userId       = data.user_id;
+    S.username     = data.username;
+    S.email        = data.email;
+    S.emailVerified = data.email_verified;
+
+    showApp();
+  } catch (e) {
+    err.textContent = e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    txt.textContent = 'Sign In →';
+  }
+}
+
+document.getElementById('loginPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ── Logout ─────────────────────────────────────────────────────
+async function doLogout() {
+  await api('/logout/', { method: 'POST' }).catch(() => {});
+  S.token = '';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginPass').value = '';
+  toast('Logged out', 'ok');
+}
+
+// ── Show app ───────────────────────────────────────────────────
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.style.flexDirection = 'column';
+
+  document.getElementById('navUsername').textContent = S.username;
+  document.getElementById('navAvatar').textContent = S.username[0].toUpperCase();
+  document.getElementById('overviewSub').textContent = `// welcome back, ${S.username} · ${new Date().toLocaleString()}`;
+  document.getElementById('statUser').textContent = S.username;
+
+  loadOverview();
+  showPage('overview');
+}
+
+// ── Page routing ───────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const tabs = { overview: 0, orgs: 1, assignments: 2, history: 3 };
+  document.querySelectorAll('.nav-tab')[tabs[name]]?.classList.add('active');
+
+  if (name === 'orgs')        loadOrgs();
+  if (name === 'assignments') loadAssignments();
+  if (name === 'history')     loadHistory();
+}
+
+// ── Overview ───────────────────────────────────────────────────
+async function loadOverview() {
+  // Profile
+  const profileBody = document.getElementById('profileBody');
+  const { ok, data } = await api(`/users/${S.userId}/profile/`);
+  if (ok) {
+    profileBody.innerHTML = [
+      ['User ID',    `<span class="uuid-cell" title="${data.user_id}">${data.user_id}</span>`],
+      ['Username',   data.username],
+      ['Email',      data.email],
+      ['First Name', data.first_name || '—'],
+      ['Last Name',  data.last_name  || '—'],
+      ['Active',     data.is_active ? '<span class="badge badge-green">Yes</span>' : '<span class="badge badge-rose">No</span>'],
+      ['Joined',     new Date(data.date_joined).toLocaleDateString()],
+    ].map(([k,v]) => `
+      <div class="profile-row">
+        <span class="profile-key">${k}</span>
+        <span class="profile-val">${v}</span>
+      </div>`).join('');
+    document.getElementById('profileVerifiedBadge').innerHTML =
+      S.emailVerified
+        ? '<span class="badge badge-green">✓ Email verified</span>'
+        : '<span class="badge badge-amber">⚠ Unverified</span>';
+  }
+
+  // Token info
+  document.getElementById('tokenBody').innerHTML = `
+    <div class="profile-row">
+      <span class="profile-key">Access Token</span>
+      <span class="profile-val" style="font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${S.token}">${S.token.slice(0,24)}…</span>
+    </div>
+    <div class="profile-row">
+      <span class="profile-key">Refresh Token</span>
+      <span class="profile-val" style="font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${S.refreshToken.slice(0,24)}…</span>
+    </div>
+    <div class="profile-row">
+      <span class="profile-key">Email Verified</span>
+      <span class="profile-val ${S.emailVerified ? 'verified' : 'unverified'}">${S.emailVerified ? '✓ Yes' : '✗ No'}</span>
+    </div>
+  `;
+
+  // Stats
+  const orgsRes   = await api('/organizations/');
+  const assignRes = await api('/user-organizations/');
+  const histRes   = await api(`/users/${S.userId}/login-history/`);
+
+  if (orgsRes.ok)   document.getElementById('statOrgs').textContent   = orgsRes.data.count ?? orgsRes.data.organizations?.length ?? '—';
+  if (assignRes.ok) document.getElementById('statAssign').textContent = assignRes.data.count ?? assignRes.data.user_organizations?.length ?? '—';
+  if (histRes.ok)   document.getElementById('statLogins').textContent = histRes.data.count ?? histRes.data.login_history?.length ?? '—';
+}
+
+// ── Organizations ──────────────────────────────────────────────
+async function loadOrgs() {
+  const body = document.getElementById('orgsTableBody');
+  body.innerHTML = '<div class="empty"><div class="empty-icon">⟳</div><span>Loading…</span></div>';
+
+  const { ok, data } = await api('/organizations/');
+  if (!ok) { body.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><span>${data.error || 'Failed to load'}</span></div>`; return; }
+
+  const orgs = data.organizations || [];
+  document.getElementById('orgCount').textContent = `${orgs.length} org${orgs.length !== 1 ? 's' : ''}`;
+
+  if (!orgs.length) { body.innerHTML = '<div class="empty"><div class="empty-icon">🏢</div><span>No organizations yet</span></div>'; return; }
+
+  body.innerHTML = `
+    <table>
+      <thead><tr><th>Name</th><th>Domain</th><th>Org ID</th><th>Created</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${orgs.map(o => `
+          <tr>
+            <td style="font-weight:600;color:var(--ink)">${o.name}</td>
+            <td><span class="badge badge-sky">${o.domain}</span></td>
+            <td class="uuid-cell" title="${o.org_id}">${o.org_id}</td>
+            <td>${new Date(o.created_at).toLocaleDateString()}</td>
+            <td>
+              <button class="action-btn-danger" onclick="deleteOrg('${o.org_id}','${o.name}')">Delete</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function createOrg() {
+  const name   = document.getElementById('mo-name').value.trim();
+  const domain = document.getElementById('mo-domain').value.trim();
+  const err    = document.getElementById('mo-err');
+  err.style.display = 'none';
+
+  if (!name || !domain) { err.textContent = 'Name and domain are required'; err.style.display = 'block'; return; }
+
+  const { ok, data } = await api('/organizations/', {
+    method: 'POST',
+    body: JSON.stringify({ name, domain })
+  });
+
+  if (!ok) { err.textContent = JSON.stringify(data); err.style.display = 'block'; return; }
+
+  closeModal('createOrg');
+  document.getElementById('mo-name').value = '';
+  document.getElementById('mo-domain').value = '';
+  toast(`Organization "${name}" created ✓`, 'ok');
+  loadOrgs();
+  loadOverview();
+}
+
+async function deleteOrg(orgId, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  const { ok, data } = await api(`/organizations/${orgId}/`, { method: 'DELETE' });
+  if (ok) { toast(`"${name}" deleted`, 'ok'); loadOrgs(); loadOverview(); }
+  else toast(data.error || 'Delete failed', 'err');
+}
+
+// ── Assignments ────────────────────────────────────────────────
+async function loadAssignments() {
+  const body = document.getElementById('assignTableBody');
+  body.innerHTML = '<div class="empty"><div class="empty-icon">⟳</div><span>Loading…</span></div>';
+
+  const { ok, data } = await api('/user-organizations/');
+  if (!ok) { body.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><span>${data.error || 'Failed to load'}</span></div>`; return; }
+
+  const list = data.user_organizations || [];
+  document.getElementById('assignCount').textContent = `${list.length} assignment${list.length !== 1 ? 's' : ''}`;
+
+  if (!list.length) { body.innerHTML = '<div class="empty"><div class="empty-icon">🔗</div><span>No assignments yet</span></div>'; return; }
+
+  body.innerHTML = `
+    <table>
+      <thead><tr><th>Username</th><th>User ID</th><th>Organization</th><th>Org ID</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${list.map(a => `
+          <tr>
+            <td style="font-weight:600;color:var(--ink)">${a.username}</td>
+            <td class="uuid-cell" title="${a.user_id}">${a.user_id}</td>
+            <td><span class="badge badge-violet">${a.org_name}</span></td>
+            <td class="uuid-cell" title="${a.org_id}">${a.org_id}</td>
+            <td>
+              <button class="action-btn-danger" onclick="removeAssignment('${a.user_id}','${a.org_id}','${a.username}')">Remove</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function assignUser() {
+  const user = document.getElementById('ma-user').value.trim();
+  const org  = document.getElementById('ma-org').value.trim();
+  const err  = document.getElementById('ma-err');
+  err.style.display = 'none';
+
+  if (!user || !org) { err.textContent = 'Both User ID and Org ID are required'; err.style.display = 'block'; return; }
+
+  const { ok, data } = await api('/user-organizations/', {
+    method: 'POST',
+    body: JSON.stringify({ user, organization: org })
+  });
+
+  if (!ok) { err.textContent = JSON.stringify(data); err.style.display = 'block'; return; }
+
+  closeModal('assignUser');
+  document.getElementById('ma-user').value = '';
+  document.getElementById('ma-org').value = '';
+  toast('User assigned ✓', 'ok');
+  loadAssignments();
+  loadOverview();
+}
+
+async function removeAssignment(userId, orgId, username) {
+  if (!confirm(`Remove ${username} from this org?`)) return;
+  const { ok, data } = await api(`/user-organizations/${userId}/${orgId}/`, { method: 'DELETE' });
+  if (ok) { toast(`${username} removed ✓`, 'ok'); loadAssignments(); loadOverview(); }
+  else toast(data.error || 'Remove failed', 'err');
+}
+
+// ── Login History ──────────────────────────────────────────────
+async function loadHistory() {
+  const body = document.getElementById('historyTableBody');
+  body.innerHTML = '<div class="empty"><div class="empty-icon">⟳</div><span>Loading…</span></div>';
+
+  const { ok, data } = await api(`/users/${S.userId}/login-history/`);
+  if (!ok) { body.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><span>${data.error || 'Failed to load'}</span></div>`; return; }
+
+  const list = data.login_history || data.results || [];
+  if (!list.length) { body.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><span>No login history</span></div>'; return; }
+
+  body.innerHTML = `
+    <table>
+      <thead><tr><th>Time</th><th>IP Address</th><th>Status</th><th>User Agent</th><th>Logout</th></tr></thead>
+      <tbody>
+        ${list.map(h => `
+          <tr>
+            <td>${new Date(h.login_time).toLocaleString()}</td>
+            <td><span class="badge badge-sky">${h.ip_address}</span></td>
+            <td><span class="badge ${h.status === 'SUCCESS' ? 'badge-green' : 'badge-rose'}">${h.status}</span></td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--ink3)" title="${h.user_agent}">${h.user_agent || '—'}</td>
+            <td style="font-size:10px;color:var(--ink3)">${h.logout_time ? new Date(h.logout_time).toLocaleString() : '—'}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── Modals ─────────────────────────────────────────────────────
+function openModal(name) {
+  // Pre-fill current user ID in assign modal
+  if (name === 'assignUser') {
+    document.getElementById('ma-user').value = S.userId;
+  }
+  document.getElementById('modal-' + name).classList.add('open');
+}
+
+function closeModal(name) {
+  document.getElementById('modal-' + name).classList.remove('open');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── Toast ──────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.className = `toast ${type}`;
+  el.textContent = (type === 'ok' ? '✓ ' : '✗ ') + msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

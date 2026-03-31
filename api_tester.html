@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth API Tester</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --border: #1e1e2e;
+    --border2: #2a2a3e;
+    --accent: #7c6aff;
+    --accent2: #a78bfa;
+    --accent3: #38bdf8;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --muted2: #94a3b8;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* Layout */
+  .app {
+    display: grid;
+    grid-template-columns: 260px 1fr 420px;
+    grid-template-rows: 56px 1fr;
+    height: 100vh;
+    grid-template-areas:
+      "header header header"
+      "sidebar main response";
+  }
+
+  /* Header */
+  header {
+    grid-area: header;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .header-sep { flex: 1; }
+
+  .base-url-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 5px 12px;
+    width: 320px;
+  }
+
+  .base-url-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .base-url-input {
+    background: none;
+    border: none;
+    color: var(--accent3);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    flex: 1;
+    outline: none;
+    width: 100%;
+  }
+
+  .token-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(124, 106, 255, 0.1);
+    border: 1px solid rgba(124, 106, 255, 0.3);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: var(--accent2);
+    max-width: 200px;
+    overflow: hidden;
+  }
+
+  .token-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+  }
+
+  .token-dot.inactive { background: var(--muted); animation: none; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .token-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    grid-area: sidebar;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 12px 0;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sidebar-section {
+    margin-bottom: 4px;
+  }
+
+  .sidebar-section-title {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    padding: 8px 16px 4px;
+  }
+
+  .endpoint-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-align: left;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+  }
+
+  .endpoint-btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+    border-left-color: var(--border2);
+  }
+
+  .endpoint-btn.active {
+    background: rgba(124, 106, 255, 0.08);
+    color: var(--text);
+    border-left-color: var(--accent);
+  }
+
+  .method-tag {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 3px;
+    min-width: 36px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .method-get { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .method-post { background: rgba(56, 189, 248, 0.15); color: var(--accent3); }
+  .method-put { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .method-delete { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+
+  /* Main panel */
+  .main {
+    grid-area: main;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .main::-webkit-scrollbar { width: 4px; }
+  .main::-webkit-scrollbar-track { background: transparent; }
+  .main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .endpoint-method-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  .endpoint-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .endpoint-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .url-bar {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .url-bar:focus-within { border-color: var(--accent); }
+
+  .url-method {
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    border-right: 1px solid var(--border2);
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .url-input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 14px;
+    outline: none;
+  }
+
+  .send-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .send-btn:hover { background: var(--accent2); }
+  .send-btn:active { transform: scale(0.98); }
+  .send-btn:disabled { background: var(--muted); cursor: not-allowed; }
+
+  .send-btn .spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: none;
+  }
+
+  .send-btn.loading .spinner { display: block; }
+  .send-btn.loading .btn-text { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Form fields */
+  .fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .fields-grid.single { grid-template-columns: 1fr; }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .field-group.full { grid-column: 1 / -1; }
+
+  .field-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+
+  .field-label .required { color: var(--red); margin-left: 2px; }
+
+  .field-input {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .field-input:focus { border-color: var(--accent); }
+  .field-input::placeholder { color: var(--muted); }
+
+  /* Response panel */
+  .response-panel {
+    grid-area: response;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .response-header {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .response-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .status-pill .code {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .status-pill.ok .code { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .status-pill.err .code { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .status-pill.warn .code { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+
+  .response-meta {
+    padding: 8px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .meta-item {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 10px;
+  }
+
+  .meta-label { color: var(--muted); }
+  .meta-value { color: var(--muted2); }
+
+  .response-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    font-size: 11.5px;
+    line-height: 1.6;
+  }
+
+  .response-body::-webkit-scrollbar { width: 4px; }
+  .response-body::-webkit-scrollbar-track { background: transparent; }
+  .response-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .response-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--muted);
+    gap: 12px;
+    text-align: center;
+  }
+
+  .response-empty-icon {
+    font-size: 32px;
+    opacity: 0.4;
+  }
+
+  .response-empty p {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  /* JSON syntax highlighting */
+  .json-key { color: #a78bfa; }
+  .json-string { color: #86efac; }
+  .json-number { color: #fdba74; }
+  .json-bool { color: #67e8f9; }
+  .json-null { color: var(--muted); }
+  .json-brace { color: var(--muted2); }
+
+  /* Log panel */
+  .history-panel {
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  .history-panel::-webkit-scrollbar { width: 4px; }
+  .history-panel::-webkit-scrollbar-track { background: transparent; }
+  .history-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .history-header {
+    padding: 8px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+  }
+
+  .history-clear {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+  }
+
+  .history-clear:hover { color: var(--red); }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    font-size: 10px;
+    border-bottom: 1px solid rgba(30,30,46,0.5);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .history-item:hover { background: var(--surface2); }
+
+  .history-method { font-weight: 700; min-width: 32px; }
+  .history-url { color: var(--muted2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history-status { font-size: 10px; font-weight: 600; }
+  .history-time { color: var(--muted); font-size: 9px; }
+
+  .s-2xx { color: var(--green); }
+  .s-4xx { color: var(--red); }
+  .s-5xx { color: var(--yellow); }
+
+  /* Helpers */
+  .section-sep {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  .auto-fill-btn {
+    background: rgba(124, 106, 255, 0.1);
+    border: 1px solid rgba(124, 106, 255, 0.25);
+    border-radius: 4px;
+    color: var(--accent2);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .auto-fill-btn:hover {
+    background: rgba(124, 106, 255, 0.2);
+    border-color: var(--accent);
+  }
+
+  .info-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 16px;
+  }
+
+  .chip {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    font-size: 10px;
+    padding: 3px 8px;
+    color: var(--muted2);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .chip .chip-key { color: var(--muted); }
+  .chip .chip-val { color: var(--accent3); }
+
+  /* Notification toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 300px;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(52, 211, 153, 0.4); }
+  .toast.error { border-color: rgba(248, 113, 113, 0.4); }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--muted);
+    font-size: 11px;
+    gap: 8px;
+  }
+
+  /* Scrollbar global */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      Auth API Tester
+    </div>
+    <div class="header-sep"></div>
+    <div class="base-url-group">
+      <span class="base-url-label">Base</span>
+      <input class="base-url-input" id="baseUrl" type="text" value="http://localhost:8000/api/auth" placeholder="http://localhost:8000/api/auth" oninput="API_BASE_URL = this.value">
+    </div>
+    <div class="token-badge" id="tokenBadge">
+      <div class="token-dot inactive" id="tokenDot"></div>
+      <span class="token-text" id="tokenDisplay">No token</span>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <!-- populated by JS -->
+  </nav>
+
+  <!-- Main -->
+  <main class="main" id="mainPanel">
+    <div class="empty-state">
+      <span style="font-size:28px;opacity:0.3">←</span>
+      <span>Select an endpoint</span>
+    </div>
+  </main>
+
+  <!-- Response -->
+  <aside class="response-panel">
+    <div class="response-header">
+      <span class="response-title">Response</span>
+      <div class="status-pill" id="statusPill"></div>
+    </div>
+    <div class="response-meta" id="responseMeta" style="display:none">
+      <div class="meta-item"><span class="meta-label">Time</span><span class="meta-value" id="respTime">—</span></div>
+      <div class="meta-item"><span class="meta-label">Size</span><span class="meta-value" id="respSize">—</span></div>
+    </div>
+    <div class="response-body" id="responseBody">
+      <div class="response-empty">
+        <div class="response-empty-icon">◎</div>
+        <p>Send a request to<br>see the response here</p>
+      </div>
+    </div>
+    <div class="history-panel" id="historyPanel">
+      <div class="history-header">
+        Request History
+        <button class="history-clear" onclick="clearHistory()">Clear</button>
+      </div>
+      <div id="historyList"></div>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ─────────────────────────────────────────────────────────────────
+let state = {
+  token: '',
+  refreshToken: '',
+  userId: '',
+  orgId: '',
+  history: []
+};
+
+// ─── Endpoint definitions ───────────────────────────────────────────────────
+const ENDPOINTS = [
+  {
+    group: 'Auth',
+    items: [
+      {
+        id: 'register',
+        label: 'Register',
+        method: 'POST',
+        path: '/register/',
+        desc: 'Create a new user account',
+        auth: false,
+        fields: [
+          { key: 'username', label: 'Username', required: true, placeholder: 'johndoe', defaultVal: 'testuser' },
+          { key: 'email', label: 'Email', required: true, placeholder: 'john@example.com', defaultVal: 'test@example.com' },
+          { key: 'password', label: 'Password', required: true, placeholder: 'SecurePass123!', defaultVal: 'SecurePass123!', type: 'password' }
+        ]
+      },
+      {
+        id: 'login',
+        label: 'Login',
+        method: 'POST',
+        path: '/login/',
+        desc: 'Authenticate and receive access + refresh tokens',
+        auth: false,
+        fields: [
+          { key: 'username', label: 'Username', required: true, placeholder: 'johndoe', defaultVal: 'testuser' },
+          { key: 'password', label: 'Password', required: true, placeholder: 'SecurePass123!', defaultVal: 'SecurePass123!', type: 'password' }
+        ],
+        onSuccess: (data) => {
+          if (data.access_token) {
+            state.token = data.access_token;
+            state.refreshToken = data.refresh_token || '';
+            state.userId = data.user_id || '';
+            updateTokenBadge();
+            toast('Token saved automatically ✓', 'success');
+          }
+        }
+      },
+      {
+        id: 'logout',
+        label: 'Logout',
+        method: 'POST',
+        path: '/logout/',
+        desc: 'Revoke the current access token',
+        auth: true,
+        fields: [],
+        onSuccess: () => {
+          state.token = '';
+          updateTokenBadge();
+        }
+      },
+      {
+        id: 'token-refresh',
+        label: 'Token Refresh',
+        method: 'POST',
+        path: '/token/refresh/',
+        desc: 'Get a new access token using your refresh token',
+        auth: false,
+        fields: [
+          { key: 'refresh_token', label: 'Refresh Token', required: true, placeholder: 'Paste refresh token', stateKey: 'refreshToken' }
+        ],
+        onSuccess: (data) => {
+          if (data.access_token) {
+            state.token = data.access_token;
+            updateTokenBadge();
+            toast('Token refreshed ✓', 'success');
+          }
+        }
+      }
+    ]
+  },
+  {
+    group: 'User',
+    items: [
+      {
+        id: 'profile',
+        label: 'Get Profile',
+        method: 'GET',
+        path: '/users/{user_id}/profile/',
+        desc: 'Get the authenticated user profile',
+        auth: true,
+        fields: [
+          { key: 'user_id', label: 'User ID', required: true, placeholder: 'UUID', stateKey: 'userId', urlParam: true }
+        ]
+      },
+      {
+        id: 'login-history',
+        label: 'Login History',
+        method: 'GET',
+        path: '/users/{user_id}/login-history/',
+        desc: 'Get login audit trail for a user',
+        auth: true,
+        fields: [
+          { key: 'user_id', label: 'User ID', required: true, placeholder: 'UUID', stateKey: 'userId', urlParam: true }
+        ]
+      }
+    ]
+  },
+  {
+    group: 'Password',
+    items: [
+      {
+        id: 'pw-reset-req',
+        label: 'Reset Request',
+        method: 'POST',
+        path: '/password/reset-request/',
+        desc: 'Request a password reset email',
+        auth: false,
+        fields: [
+          { key: 'email', label: 'Email', required: true, placeholder: 'john@example.com', defaultVal: 'test@example.com' }
+        ]
+      },
+      {
+        id: 'pw-reset-confirm',
+        label: 'Reset Confirm',
+        method: 'POST',
+        path: '/password/reset-confirm/',
+        desc: 'Set a new password using reset token',
+        auth: false,
+        fields: [
+          { key: 'reset_token', label: 'Reset Token', required: true, placeholder: 'Token from email' },
+          { key: 'new_password', label: 'New Password', required: true, placeholder: 'NewPass123!', type: 'password' }
+        ]
+      }
+    ]
+  },
+  {
+    group: 'Email Verification',
+    items: [
+      {
+        id: 'verify-email-req',
+        label: 'Request Verification',
+        method: 'POST',
+        path: '/verify-email/request/',
+        desc: 'Send a new verification email',
+        auth: false,
+        fields: [
+          { key: 'email', label: 'Email', required: true, placeholder: 'john@example.com', defaultVal: 'test@example.com' }
+        ]
+      },
+      {
+        id: 'verify-email-confirm',
+        label: 'Confirm Email',
+        method: 'POST',
+        path: '/verify-email/confirm/',
+        desc: 'Confirm email with verification token',
+        auth: false,
+        fields: [
+          { key: 'verification_token', label: 'Verification Token', required: true, placeholder: 'Token from email' }
+        ]
+      }
+    ]
+  },
+  {
+    group: 'Organizations',
+    items: [
+      {
+        id: 'org-list',
+        label: 'List Orgs',
+        method: 'GET',
+        path: '/organizations/',
+        desc: 'List all organizations',
+        auth: true,
+        fields: []
+      },
+      {
+        id: 'org-create',
+        label: 'Create Org',
+        method: 'POST',
+        path: '/organizations/',
+        desc: 'Create a new organization',
+        auth: true,
+        fields: [
+          { key: 'name', label: 'Org Name', required: true, placeholder: 'Acme Corp', defaultVal: 'Acme Corp' },
+          { key: 'domain', label: 'Domain', required: true, placeholder: 'acme.com', defaultVal: 'acme.com' }
+        ],
+        onSuccess: (data) => {
+          if (data.organization?.org_id) {
+            state.orgId = data.organization.org_id;
+            toast('Org ID saved ✓', 'success');
+          }
+        }
+      },
+      {
+        id: 'org-get',
+        label: 'Get Org',
+        method: 'GET',
+        path: '/organizations/{org_id}/',
+        desc: 'Get details of a specific organization',
+        auth: true,
+        fields: [
+          { key: 'org_id', label: 'Org ID', required: true, placeholder: 'UUID', stateKey: 'orgId', urlParam: true }
+        ]
+      },
+      {
+        id: 'org-update',
+        label: 'Update Org',
+        method: 'PUT',
+        path: '/organizations/{org_id}/',
+        desc: 'Update organization details',
+        auth: true,
+        fields: [
+          { key: 'org_id', label: 'Org ID', required: true, placeholder: 'UUID', stateKey: 'orgId', urlParam: true },
+          { key: 'name', label: 'Name', required: false, placeholder: 'New Name' },
+          { key: 'domain', label: 'Domain', required: false, placeholder: 'newdomain.com' }
+        ]
+      },
+      {
+        id: 'org-delete',
+        label: 'Delete Org',
+        method: 'DELETE',
+        path: '/organizations/{org_id}/',
+        desc: 'Delete an organization permanently',
+        auth: true,
+        fields: [
+          { key: 'org_id', label: 'Org ID', required: true, placeholder: 'UUID', stateKey: 'orgId', urlParam: true }
+        ]
+      }
+    ]
+  },
+  {
+    group: 'User ↔ Org',
+    items: [
+      {
+        id: 'user-org-list',
+        label: 'List Assignments',
+        method: 'GET',
+        path: '/user-organizations/',
+        desc: 'List all user-organization assignments',
+        auth: true,
+        fields: []
+      },
+      {
+        id: 'user-org-assign',
+        label: 'Assign User',
+        method: 'POST',
+        path: '/user-organizations/',
+        desc: 'Assign a user to an organization',
+        auth: true,
+        fields: [
+          { key: 'user', label: 'User ID', required: true, placeholder: 'UUID', stateKey: 'userId' },
+          { key: 'organization', label: 'Org ID', required: true, placeholder: 'UUID', stateKey: 'orgId' }
+        ]
+      },
+      {
+        id: 'user-org-remove',
+        label: 'Remove User',
+        method: 'DELETE',
+        path: '/user-organizations/{user_id}/{org_id}/',
+        desc: 'Remove a user from an organization',
+        auth: true,
+        fields: [
+          { key: 'user_id', label: 'User ID', required: true, placeholder: 'UUID', stateKey: 'userId', urlParam: true },
+          { key: 'org_id', label: 'Org ID', required: true, placeholder: 'UUID', stateKey: 'orgId', urlParam: true }
+        ]
+      }
+    ]
+  }
+];
+
+let activeEndpoint = null;
+
+// ─── Render sidebar ─────────────────────────────────────────────────────────
+function renderSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  sidebar.innerHTML = ENDPOINTS.map(group => `
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">${group.group}</div>
+      ${group.items.map(ep => `
+        <button class="endpoint-btn" id="btn-${ep.id}" onclick="selectEndpoint('${ep.id}')">
+          <span class="method-tag method-${ep.method.toLowerCase()}">${ep.method}</span>
+          ${ep.label}
+        </button>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// ─── Select endpoint ─────────────────────────────────────────────────────────
+function selectEndpoint(id) {
+  const ep = ENDPOINTS.flatMap(g => g.items).find(e => e.id === id);
+  if (!ep) return;
+  activeEndpoint = ep;
+
+  // Update sidebar active state
+  document.querySelectorAll('.endpoint-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + id)?.classList.add('active');
+
+  renderMain(ep);
+}
+
+// ─── Render main panel ───────────────────────────────────────────────────────
+function renderMain(ep) {
+  const base = API_BASE_URL;
+  const fullPath = ep.path.replace(/{[^}]+}/g, (m) => {
+    const key = m.slice(1, -1);
+    return state[key === 'user_id' ? 'userId' : key === 'org_id' ? 'orgId' : key] || m;
+  });
+
+  const urlParams = ep.fields.filter(f => f.urlParam);
+  const bodyFields = ep.fields.filter(f => !f.urlParam);
+
+  const methodColor = {
+    GET: 'var(--green)', POST: 'var(--accent3)',
+    PUT: 'var(--yellow)', DELETE: 'var(--red)'
+  }[ep.method] || 'var(--text)';
+
+  document.getElementById('mainPanel').innerHTML = `
+    <div class="endpoint-header">
+      <span class="endpoint-method-badge method-${ep.method.toLowerCase()}" style="font-family:var(--font-mono);font-size:12px;font-weight:700;padding:4px 10px;border-radius:4px;">${ep.method}</span>
+      <span class="endpoint-title">${ep.label}</span>
+      ${ep.auth ? '<span style="font-size:10px;color:var(--accent2);background:rgba(124,106,255,0.1);border:1px solid rgba(124,106,255,0.25);border-radius:4px;padding:2px 8px;">🔒 Auth required</span>' : '<span style="font-size:10px;color:var(--green);background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:4px;padding:2px 8px;">Public</span>'}
+    </div>
+    <p class="endpoint-desc">${ep.desc}</p>
+
+    <div class="url-bar">
+      <span class="url-method method-${ep.method.toLowerCase()}" style="color:${methodColor};font-family:var(--font-mono);font-size:11px;font-weight:700;padding:10px 14px;border-right:1px solid var(--border2);min-width:68px;text-align:center;">${ep.method}</span>
+      <input class="url-input" id="urlInput" value="${base}${fullPath}" readonly>
+      <button class="send-btn" id="sendBtn" onclick="sendRequest()">
+        <span class="spinner"></span>
+        <span class="btn-text">Send ▶</span>
+      </button>
+    </div>
+
+    ${urlParams.length > 0 ? `
+    <div class="card">
+      <div class="card-header">
+        Path Parameters
+        <button class="auto-fill-btn" onclick="autoFillFields()">Auto-fill from state</button>
+      </div>
+      <div class="fields-grid ${urlParams.length === 1 ? 'single' : ''}">
+        ${urlParams.map(f => renderField(f, 'param')).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    ${bodyFields.length > 0 ? `
+    <div class="card">
+      <div class="card-header">
+        ${ep.method === 'GET' ? 'Query Parameters' : 'Request Body'}
+        <button class="auto-fill-btn" onclick="autoFillFields()">Auto-fill from state</button>
+      </div>
+      <div class="fields-grid ${bodyFields.length === 1 ? 'single' : ''}">
+        ${bodyFields.map(f => renderField(f, 'body')).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    ${ep.auth ? `
+    <div class="card">
+      <div class="card-header">Auth Token</div>
+      <div style="padding:12px 16px;display:flex;gap:8px;align-items:center;">
+        <input class="field-input" id="authTokenInput" type="text" value="${state.token}" placeholder="Paste token or login first" style="flex:1;">
+        <button class="auto-fill-btn" onclick="document.getElementById('authTokenInput').value = state.token; toast('Token filled ✓','success')">Use saved</button>
+      </div>
+    </div>
+    ` : ''}
+
+    <div class="info-chips" id="stateChips"></div>
+  `;
+
+  renderStateChips();
+
+  // Update URL when path params change
+  document.querySelectorAll('[data-urlparam]').forEach(input => {
+    input.addEventListener('input', updateUrlFromParams);
+  });
+}
+
+function renderField(f, type) {
+  const defaultVal = f.stateKey && state[f.stateKey] ? state[f.stateKey] : (f.defaultVal || '');
+  return `
+    <div class="field-group ${type === 'body' && activeEndpoint?.fields?.filter(x => !x.urlParam).length === 1 ? 'full' : ''}">
+      <label class="field-label">${f.label}${f.required ? '<span class="required">*</span>' : ''}</label>
+      <input class="field-input"
+        id="field-${f.key}"
+        type="${f.type || 'text'}"
+        placeholder="${f.placeholder || ''}"
+        value="${defaultVal}"
+        ${f.urlParam ? 'data-urlparam="true"' : ''}>
+    </div>
+  `;
+}
+
+function renderStateChips() {
+  const chips = document.getElementById('stateChips');
+  if (!chips) return;
+  const items = [
+    state.userId && { label: 'user_id', val: state.userId.slice(0, 8) + '…' },
+    state.orgId && { label: 'org_id', val: state.orgId.slice(0, 8) + '…' },
+    state.token && { label: 'token', val: state.token.slice(0, 8) + '…' }
+  ].filter(Boolean);
+  chips.innerHTML = items.map(i => `
+    <div class="chip">
+      <span class="chip-key">${i.label}:</span>
+      <span class="chip-val">${i.val}</span>
+    </div>
+  `).join('');
+}
+
+function updateTokenBadge() {
+  const dot = document.getElementById('tokenDot');
+  const display = document.getElementById('tokenDisplay');
+  if (state.token) {
+    dot.classList.remove('inactive');
+    display.textContent = state.token.slice(0, 20) + '…';
+  } else {
+    dot.classList.add('inactive');
+    display.textContent = 'No token';
+  }
+}
+
+function updateUrlFromParams() {
+  if (!activeEndpoint) return;
+  const base = API_BASE_URL;
+  let path = activeEndpoint.path;
+  activeEndpoint.fields.filter(f => f.urlParam).forEach(f => {
+    const val = document.getElementById('field-' + f.key)?.value || f.placeholder || ('{' + f.key + '}');
+    path = path.replace('{' + f.key + '}', val);
+  });
+  document.getElementById('urlInput').value = base + path;
+}
+
+function autoFillFields() {
+  if (!activeEndpoint) return;
+  activeEndpoint.fields.forEach(f => {
+    if (f.stateKey && state[f.stateKey]) {
+      const input = document.getElementById('field-' + f.key);
+      if (input) input.value = state[f.stateKey];
+    }
+  });
+  updateUrlFromParams();
+  toast('Fields filled from state ✓', 'success');
+}
+
+// ─── Send request directly to Django server ──────────────────────────────────
+async function sendRequest() {
+  const ep = activeEndpoint;
+  if (!ep) return;
+
+  const btn = document.getElementById('sendBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const base = API_BASE_URL.replace(/\/$/, '');
+  let path = ep.path;
+
+  // Collect fields
+  const urlParams = {};
+  const bodyParams = {};
+  ep.fields.forEach(f => {
+    const val = document.getElementById('field-' + f.key)?.value?.trim();
+    if (f.urlParam) {
+      urlParams[f.key] = val;
+      path = path.replace('{' + f.key + '}', val || ('{' + f.key + '}'));
+    } else {
+      if (val) bodyParams[f.key] = val;
+    }
+  });
+
+  const url = base + path;
+  const headers = { 'Content-Type': 'application/json' };
+
+  if (ep.auth) {
+    const tokenInput = document.getElementById('authTokenInput');
+    const tok = tokenInput ? tokenInput.value.trim() : state.token;
+    if (tok) headers['Authorization'] = 'Token ' + tok;
+  }
+
+  const options = { method: ep.method, headers };
+  if (ep.method !== 'GET' && ep.method !== 'DELETE' && Object.keys(bodyParams).length > 0) {
+    options.body = JSON.stringify(bodyParams);
+  }
+
+  const t0 = performance.now();
+
+  try {
+    const response = await fetch(url, options);
+    const elapsed = Math.round(performance.now() - t0);
+
+    let data;
+    const ct = response.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    renderResponse(response.status, data, elapsed);
+    addHistory(ep.method, path, response.status);
+
+    if (response.ok && ep.onSuccess) {
+      ep.onSuccess(data);
+    }
+
+  } catch (err) {
+    renderError(err.message);
+    addHistory(ep.method, path, 0);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+// ─── Render response ─────────────────────────────────────────────────────────
+function renderResponse(status, data, elapsed) {
+  const pill = document.getElementById('statusPill');
+  const meta = document.getElementById('responseMeta');
+  const body = document.getElementById('responseBody');
+  const timeEl = document.getElementById('respTime');
+  const sizeEl = document.getElementById('respSize');
+
+  const isOk = status >= 200 && status < 300;
+  const isWarn = status >= 300 && status < 500;
+
+  pill.className = 'status-pill ' + (isOk ? 'ok' : isWarn ? 'warn' : 'err');
+  pill.innerHTML = `<span class="code">${status}</span>`;
+
+  meta.style.display = 'flex';
+  timeEl.textContent = elapsed + 'ms';
+
+  const json = typeof data === 'object' ? JSON.stringify(data) : data;
+  sizeEl.textContent = formatSize(new Blob([json]).size);
+
+  body.innerHTML = typeof data === 'object'
+    ? `<pre style="font-family:var(--font-mono);font-size:11.5px;white-space:pre-wrap;word-break:break-all;">${syntaxHighlight(data)}</pre>`
+    : `<pre style="font-family:var(--font-mono);font-size:11.5px;white-space:pre-wrap;color:var(--muted2);">${escapeHtml(json)}</pre>`;
+}
+
+function renderError(msg) {
+  const pill = document.getElementById('statusPill');
+  const body = document.getElementById('responseBody');
+  pill.className = 'status-pill err';
+  pill.innerHTML = `<span class="code">ERR</span>`;
+  body.innerHTML = `<div class="response-empty">
+    <div class="response-empty-icon">⚠</div>
+    <p style="color:var(--red)">${escapeHtml(msg)}</p>
+    <p style="margin-top:4px">Check base URL and CORS settings</p>
+  </div>`;
+}
+
+function syntaxHighlight(json) {
+  const str = JSON.stringify(json, null, 2);
+  return str.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
+    let cls = 'json-number';
+    if (/^"/.test(match)) {
+      cls = /:$/.test(match) ? 'json-key' : 'json-string';
+    } else if (/true|false/.test(match)) {
+      cls = 'json-bool';
+    } else if (/null/.test(match)) {
+      cls = 'json-null';
+    }
+    return `<span class="${cls}">${escapeHtml(match)}</span>`;
+  });
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + 'B';
+  return (bytes / 1024).toFixed(1) + 'KB';
+}
+
+// ─── History ─────────────────────────────────────────────────────────────────
+function addHistory(method, path, status) {
+  state.history.unshift({ method, path, status, time: new Date().toLocaleTimeString() });
+  if (state.history.length > 30) state.history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!state.history.length) {
+    list.innerHTML = '<div class="empty-state" style="height:60px;font-size:10px;">No requests yet</div>';
+    return;
+  }
+  list.innerHTML = state.history.map((h, i) => {
+    const cls = h.status >= 500 ? 's-5xx' : h.status >= 400 ? 's-4xx' : h.status >= 200 ? 's-2xx' : 's-4xx';
+    const methodCls = 'method-' + h.method.toLowerCase();
+    return `<div class="history-item">
+      <span class="history-method method-tag ${methodCls}" style="font-size:9px;">${h.method}</span>
+      <span class="history-url">${h.path}</span>
+      <span class="history-status ${cls}">${h.status || 'ERR'}</span>
+      <span class="history-time">${h.time}</span>
+    </div>`;
+  }).join('');
+}
+
+function clearHistory() {
+  state.history = [];
+  renderHistory();
+}
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.className = 'toast ' + type;
+  el.innerHTML = (type === 'success' ? '✓ ' : '⚠ ') + msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+API_BASE_URL = document.getElementById('baseUrl').value;
+renderSidebar();
+renderHistory();
+</script>
+</body>
+</html>
